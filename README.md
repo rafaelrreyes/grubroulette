@@ -60,8 +60,15 @@ cp .env.example .env   # optional for now
 npm run dev
 ```
 
-- Web (Vite dev server, HMR): http://localhost:5173 (Vite picks the next free port if taken)
-- API: http://localhost:8787 — Vite proxies `/api/*` to it, so the browser only talks to Vite.
+Open **http://localhost:3337**.
+
+| Process | Port | Reload behavior |
+| ------- | ---- | --------------- |
+| Web (Vite) | `3337` (`WEB_PORT`) | Hot module replacement: React/CSS edits update in place without losing state |
+| API (Hono) | `4337` (`PORT`) | `node --watch` restarts the server whenever any imported `.ts` file changes |
+
+Vite proxies `/api/*` to the API, so the browser only ever talks to port 3337. Both ports
+use `strictPort`, so if one is taken you get an error instead of a surprise port. Change them in `.env`.
 
 ## Scripts (run from the repo root)
 
@@ -104,7 +111,8 @@ See `.env.example`. Nothing is required to run today.
 
 | Var                    | Used for                                   |
 | ---------------------- | ------------------------------------------ |
-| `PORT`                 | Server port (default 8787; Docker uses 8080) |
+| `PORT`                 | API/server port (default 4337; Docker uses 8080; hosts may inject their own) |
+| `WEB_PORT`             | Vite dev server port (default 3337)        |
 | `APP_VERSION`          | Reported by `/api/health` (defaults to root `package.json` version) |
 | `WEB_DIST_DIR`         | Where the built SPA lives (auto-detected)  |
 | `GOOGLE_CLIENT_ID/SECRET` | Future Google sign-in                   |

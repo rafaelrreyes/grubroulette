@@ -15,7 +15,7 @@ function rootVersion() {
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  PORT: z.coerce.number().int().positive().default(8787),
+  PORT: z.coerce.number().int().positive().default(4337),
   WEB_DIST_DIR: z.string().default(defaultWebDist),
   APP_VERSION: z
     .string()
