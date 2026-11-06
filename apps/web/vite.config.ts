@@ -18,8 +18,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      host: env.WEB_HOST ?? "localhost",
       port: webPort,
       strictPort: true,
+      watch: env.VITE_USE_POLLING === "true" ? { usePolling: true, interval: 300 } : undefined,
       proxy: {
         "/api": `http://localhost:${apiPort}`,
       },

@@ -70,6 +70,41 @@ Open **http://localhost:3337**.
 Vite proxies `/api/*` to the API, so the browser only ever talks to port 3337. Both ports
 use `strictPort`, so if one is taken you get an error instead of a surprise port. Change them in `.env`.
 
+## Contributing with Docker (no local Node needed)
+
+Only [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose v2.24+) is required.
+
+```bash
+git clone https://github.com/<owner>/grub-roulette.git
+cd grub-roulette
+cp .env.example .env      # optional
+docker compose up         # first run installs deps inside the container (~1 min)
+```
+
+Open **http://localhost:3337**. Edit files on your machine as usual. The repo is bind-mounted
+into the container, so Vite hot-reloads the UI and `node --watch` restarts the API (4337)
+exactly like the native setup.
+
+| Task | Command |
+| ---- | ------- |
+| Start (detached) | `docker compose up -d` then `docker compose logs -f app` |
+| Stop | `docker compose down` |
+| Run lint / typecheck / build | `docker compose exec app npm run check` |
+| Add a dependency | `docker compose exec app npm install <pkg> -w @grub/web` (or `@grub/api`) |
+| Shell inside the container | `docker compose exec app sh` |
+| Reset deps from scratch | `docker compose down -v && docker compose up` |
+| Run the production image locally | `docker compose --profile prod up --build prod` → http://localhost:8080 |
+
+How it works:
+
+- The `dev` stage of the `Dockerfile` is just Node 26 plus `docker/dev-entrypoint.sh`. Source
+  code is mounted, not copied, so there's nothing to rebuild when you edit code.
+- `node_modules` lives in Docker volumes, so Linux-native binaries (Rolldown, Tailwind's
+  oxide, lightningcss) never clash with a macOS/Windows host install. Dependencies are
+  reinstalled automatically only when `package-lock.json` changes (e.g. after a `git pull`).
+- If hot reload misses changes (some Windows/WSL setups), set `VITE_USE_POLLING=true` in `.env`.
+- CI runs a `compose-dev` job that boots this exact setup and checks both ports, so it stays working.
+
 ## Scripts (run from the repo root)
 
 | Script              | What it does                                                         |

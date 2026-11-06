@@ -46,3 +46,18 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  compose-dev:
+    name: Docker Compose dev environment boots
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker compose up -d --build --wait --wait-timeout 300 app
+      - run: |
+          curl -fsS http://127.0.0.1:4337/api/health
+          curl -fsS http://127.0.0.1:3337/ | grep -q "Grub Roulette"
+          curl -fsS http://127.0.0.1:3337/api/health
+      - if: failure()
+        run: docker compose logs app
+      - if: always()
+        run: docker compose down -v

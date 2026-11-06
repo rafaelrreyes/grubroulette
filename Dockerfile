@@ -1,5 +1,16 @@
 # syntax=docker/dockerfile:1.7
 
+# Local development (used by compose.yaml). Source is bind-mounted, not copied.
+FROM node:26.13.0-alpine AS dev
+WORKDIR /app
+ENV NODE_ENV=development \
+    WEB_HOST=0.0.0.0
+COPY docker/dev-entrypoint.sh /usr/local/bin/dev-entrypoint
+RUN chmod +x /usr/local/bin/dev-entrypoint
+EXPOSE 3337 4337
+ENTRYPOINT ["dev-entrypoint"]
+CMD ["npm", "run", "dev"]
+
 FROM node:26.13.0-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
