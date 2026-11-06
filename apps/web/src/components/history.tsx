@@ -16,7 +16,7 @@ export function History() {
   const history = useGame((s) => s.history);
 
   return (
-    <Card className="sticker gap-4">
+    <Card className="gap-4 sticker">
       <CardHeader>
         <CardTitle className="text-lg font-black">📜 Hall of Meals</CardTitle>
         <CardDescription>Your recently accepted destinies.</CardDescription>
@@ -27,7 +27,10 @@ export function History() {
         ) : (
           <ul className="flex flex-col gap-2">
             {history.slice(0, 6).map((h) => (
-              <li key={h.at} className="flex items-center justify-between gap-2 rounded-lg border-2 bg-muted/60 px-3 py-2 text-sm">
+              <li
+                key={h.at}
+                className="flex items-center justify-between gap-2 rounded-lg border-2 bg-muted/60 px-3 py-2 text-sm"
+              >
                 <span className="truncate font-semibold">
                   {h.emoji ?? MEAL_META[h.meal].emoji} {h.name}
                 </span>

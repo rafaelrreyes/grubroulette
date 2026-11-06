@@ -1,11 +1,11 @@
-import { useState, type FormEvent } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { toast } from "sonner";
 import { Plus, Trash2, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { type FormEvent, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { QUICK_ADDS, type Meal } from "@/data/meals";
+import { type Meal, QUICK_ADDS } from "@/data/meals";
 import { useGame } from "@/lib/store";
 
 const ROTATIONS = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2", "rotate-0"];
@@ -34,7 +34,7 @@ export function IdeaList({ meal }: { meal: Meal }) {
   const suggestions = QUICK_ADDS[meal].filter((s) => !ideas.some((i) => i.toLowerCase() === s.toLowerCase()));
 
   return (
-    <Card className="sticker gap-4">
+    <Card className="gap-4 sticker">
       <CardHeader>
         <CardTitle className="text-lg font-black">🥊 The Contenders</CardTitle>
         <CardDescription>Toss in some ideas. Or don't, and embrace the chaos.</CardDescription>
@@ -49,7 +49,11 @@ export function IdeaList({ meal }: { meal: Meal }) {
             aria-label="Add a food idea"
             className="h-10 border-2 bg-card"
           />
-          <Button type="submit" className="sticker sticker-press h-10 px-3 font-bold" disabled={!draft.trim()}>
+          <Button
+            type="submit"
+            className="h-10 sticker-press px-3 font-bold sticker"
+            disabled={!draft.trim()}
+          >
             <Plus /> Add
           </Button>
         </form>
@@ -63,7 +67,7 @@ export function IdeaList({ meal }: { meal: Meal }) {
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
-                className={`sticker inline-flex items-center gap-1 rounded-full bg-secondary py-1 pr-1 pl-3 text-sm font-semibold ${ROTATIONS[i % ROTATIONS.length]}`}
+                className={`inline-flex items-center gap-1 rounded-full bg-secondary py-1 pr-1 pl-3 text-sm font-semibold sticker ${ROTATIONS[i % ROTATIONS.length]}`}
               >
                 {idea}
                 <button
@@ -86,7 +90,9 @@ export function IdeaList({ meal }: { meal: Meal }) {
 
         {suggestions.length > 0 && (
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Quick add</span>
+            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Quick add
+            </span>
             <div className="flex flex-wrap gap-1.5">
               {suggestions.map((s) => (
                 <button
@@ -103,7 +109,12 @@ export function IdeaList({ meal }: { meal: Meal }) {
         )}
 
         {ideas.length > 0 && (
-          <Button variant="ghost" size="sm" className="self-end text-muted-foreground" onClick={() => clearIdeas(meal)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="self-end text-muted-foreground"
+            onClick={() => clearIdeas(meal)}
+          >
             <Trash2 /> Clear all
           </Button>
         )}

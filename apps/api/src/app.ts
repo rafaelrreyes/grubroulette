@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { relative } from "node:path";
-import { Hono } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
+import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { env } from "./lib/env.ts";

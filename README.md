@@ -12,19 +12,19 @@ get **3 vetoes per day**, and unlock trophies like _Agent of Chaos_ and _Midnigh
 
 ## Tech stack
 
-| Layer       | Choice                                                                 |
-| ----------- | ---------------------------------------------------------------------- |
-| Runtime     | Node.js **26 LTS** (pinned in `.nvmrc`)                                |
-| Monorepo    | npm workspaces (`apps/*`)                                              |
-| Frontend    | React 19, TypeScript 6, **Vite 8** (Rolldown bundler)                  |
-| Styling     | Tailwind CSS v4 (`@tailwindcss/vite`, CSS-first config)                |
-| Components  | **shadcn/ui** (`base-nova` style on **Base UI** primitives), lucide icons |
-| Motion/FX   | `motion` (Framer Motion) + a custom food-emoji confetti                |
-| State       | `zustand` with `persist` (localStorage) for ideas, XP, achievements    |
-| Backend     | **Hono** on `@hono/node-server`, `zod` validation                      |
+| Layer       | Choice                                                                           |
+| ----------- | -------------------------------------------------------------------------------- |
+| Runtime     | Node.js **26 LTS** (pinned in `.nvmrc`)                                          |
+| Monorepo    | npm workspaces (`apps/*`)                                                        |
+| Frontend    | React 19, TypeScript 6, **Vite 8** (Rolldown bundler)                            |
+| Styling     | Tailwind CSS v4 (`@tailwindcss/vite`, CSS-first config)                          |
+| Components  | **shadcn/ui** (`base-nova` style on **Base UI** primitives), lucide icons        |
+| Motion/FX   | `motion` (Framer Motion) + a custom food-emoji confetti                          |
+| State       | `zustand` with `persist` (localStorage) for ideas, XP, achievements              |
+| Backend     | **Hono** on `@hono/node-server`, `zod` validation                                |
 | TS on Node  | Node runs `.ts` directly in dev (native type stripping); `tsc` emits JS for prod |
-| Lint        | ESLint 10 flat config, typescript-eslint, react-hooks, react-refresh   |
-| CI/CD       | GitHub Actions → GHCR Docker image + GitHub Release on tags            |
+| Lint/format | **Biome 2** (one tool: lint, format, import sorting, Tailwind class sorting)     |
+| CI/CD       | GitHub Actions → GHCR Docker image + GitHub Release on tags                      |
 
 ## Repo layout
 
@@ -45,8 +45,16 @@ get **3 vetoes per day**, and unlock trophies like _Agent of Chaos_ and _Midnigh
 │           ├── components/ui # shadcn components (Base UI)
 │           ├── lib/          # api client, game rules, zustand store
 │           └── data/meals.ts # meal metadata, quick-adds, reel decoys
-├── .github/workflows/        # ci.yml, release.yml
-├── Dockerfile                # multi-stage, single container (API + SPA)
+├── .cursor/
+│   ├── skills/               # project skills: code-style, app-patterns, ci-cd-deploy
+│   └── rules/                # always-on rule pointing agents at the skills
+├── .github/workflows/        # ci.yml (install → lint → build), deploy.yml (tags → deploy)
+├── .githooks/pre-commit      # Biome check on staged files
+├── docs/deployment.md        # how CI/CD and hosting work
+├── AGENTS.md                 # entry point for AI agents
+├── biome.json                # lint + format config
+├── compose.yaml              # Docker dev environment (+ prod profile)
+├── Dockerfile                # dev stage + multi-stage production image
 └── .nvmrc                    # Node version for nvm / CI / Docker
 ```
 
@@ -62,10 +70,10 @@ npm run dev
 
 Open **http://localhost:3337**.
 
-| Process | Port | Reload behavior |
-| ------- | ---- | --------------- |
+| Process    | Port                | Reload behavior                                                              |
+| ---------- | ------------------- | ---------------------------------------------------------------------------- |
 | Web (Vite) | `3337` (`WEB_PORT`) | Hot module replacement: React/CSS edits update in place without losing state |
-| API (Hono) | `4337` (`PORT`) | `node --watch` restarts the server whenever any imported `.ts` file changes |
+| API (Hono) | `4337` (`PORT`)     | `node --watch` restarts the server whenever any imported `.ts` file changes  |
 
 Vite proxies `/api/*` to the API, so the browser only ever talks to port 3337. Both ports
 use `strictPort`, so if one is taken you get an error instead of a surprise port. Change them in `.env`.
@@ -85,15 +93,15 @@ Open **http://localhost:3337**. Edit files on your machine as usual. The repo is
 into the container, so Vite hot-reloads the UI and `node --watch` restarts the API (4337)
 exactly like the native setup.
 
-| Task | Command |
-| ---- | ------- |
-| Start (detached) | `docker compose up -d` then `docker compose logs -f app` |
-| Stop | `docker compose down` |
-| Run lint / typecheck / build | `docker compose exec app npm run check` |
-| Add a dependency | `docker compose exec app npm install <pkg> -w @grub/web` (or `@grub/api`) |
-| Shell inside the container | `docker compose exec app sh` |
-| Reset deps from scratch | `docker compose down -v && docker compose up` |
-| Run the production image locally | `docker compose --profile prod up --build prod` → http://localhost:8080 |
+| Task                             | Command                                                                   |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| Start (detached)                 | `docker compose up -d` then `docker compose logs -f app`                  |
+| Stop                             | `docker compose down`                                                     |
+| Run lint / typecheck / build     | `docker compose exec app npm run check`                                   |
+| Add a dependency                 | `docker compose exec app npm install <pkg> -w @grub/web` (or `@grub/api`) |
+| Shell inside the container       | `docker compose exec app sh`                                              |
+| Reset deps from scratch          | `docker compose down -v && docker compose up`                             |
+| Run the production image locally | `docker compose --profile prod up --build prod` → http://localhost:8080   |
 
 How it works:
 
@@ -103,18 +111,34 @@ How it works:
   oxide, lightningcss) never clash with a macOS/Windows host install. Dependencies are
   reinstalled automatically only when `package-lock.json` changes (e.g. after a `git pull`).
 - If hot reload misses changes (some Windows/WSL setups), set `VITE_USE_POLLING=true` in `.env`.
-- CI runs a `compose-dev` job that boots this exact setup and checks both ports, so it stays working.
 
 ## Scripts (run from the repo root)
 
-| Script              | What it does                                                         |
-| ------------------- | -------------------------------------------------------------------- |
-| `npm run dev`       | API (`node --watch src/index.ts`) + Vite dev server, side by side    |
-| `npm run build`     | `tsc -b && vite build` for web → `apps/web/dist`; `tsc` for API → `apps/api/dist` |
-| `npm start`         | Runs the production server (API + built SPA) on `$PORT`              |
-| `npm run lint`      | ESLint across workspaces                                             |
-| `npm run typecheck` | `tsc --noEmit` across workspaces                                     |
-| `npm run check`     | lint + typecheck + build (what CI runs)                              |
+| Script              | What it does                                                                       |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| `npm run dev`       | API (`node --watch src/index.ts`) + Vite dev server, side by side                  |
+| `npm run build`     | `tsc -b && vite build` for web → `apps/web/dist`; `tsc` for API → `apps/api/dist`  |
+| `npm start`         | Runs the production server (API + built SPA) on `$PORT`                            |
+| `npm run lint`      | `biome check .`: lint + format + import order + Tailwind class order (no writes)   |
+| `npm run lint:fix`  | Same, but applies formatting and safe fixes                                        |
+| `npm run format`    | Formatting only (`biome format --write .`)                                         |
+| `npm run typecheck` | `tsc --noEmit` across workspaces                                                   |
+| `npm run check`     | lint + typecheck + build (run this before pushing; also runs before `npm version`) |
+
+## Code style & agent skills
+
+- **Biome** (`biome.json`) is the single linter and formatter: 2 spaces, 110 columns, double
+  quotes, semicolons, trailing commas, sorted imports, sorted Tailwind classes, React/a11y rules.
+- **Editor**: install the recommended Biome extension (`.vscode/extensions.json`). Format-on-save
+  and fix-on-save are preconfigured.
+- **Pre-commit hook**: `.githooks/pre-commit` runs `biome check --staged`. `npm install` enables it
+  automatically (`prepare` sets `core.hooksPath`).
+- **CI**: `biome ci` fails the pipeline on any lint or format issue, with inline PR annotations.
+- **Rules for humans and AI agents** live in project skills, which an always-on Cursor rule
+  (`.cursor/rules/project-standards.mdc`) and `AGENTS.md` point every agent to:
+  - [`code-style`](.cursor/skills/code-style/SKILL.md): lint/format rules, TS + naming conventions
+  - [`app-patterns`](.cursor/skills/app-patterns/SKILL.md): architecture, component/API/state patterns, dependency policy
+  - [`ci-cd-deploy`](.cursor/skills/ci-cd-deploy/SKILL.md): pipeline, releases, Docker, Cursor Apps
 
 ## How the build works
 
@@ -130,13 +154,13 @@ How it works:
 
 ## API
 
-| Method | Path                    | Description                                                        |
-| ------ | ----------------------- | ------------------------------------------------------------------ |
-| GET    | `/api/health`           | `{ ok, version }`                                                  |
-| GET    | `/api/config`           | Feature flags (`googleLogin`, `nearbyPlaces`) based on env vars    |
-| POST   | `/api/ideas/pick`       | Body `{ meal, ideas[] }` → crypto-random winner + quip. Empty list → Chaos Mode |
-| GET    | `/api/ideas/random`     | `?meal=lunch&exclude=a,b` → random idea from the curated pool      |
-| GET    | `/api/places`           | `?cuisine=&lat=&lng=` → **501** until `GOOGLE_MAPS_API_KEY` is set |
+| Method | Path                | Description                                                                     |
+| ------ | ------------------- | ------------------------------------------------------------------------------- |
+| GET    | `/api/health`       | `{ ok, version }`                                                               |
+| GET    | `/api/config`       | Feature flags (`googleLogin`, `nearbyPlaces`) based on env vars                 |
+| POST   | `/api/ideas/pick`   | Body `{ meal, ideas[] }` → crypto-random winner + quip. Empty list → Chaos Mode |
+| GET    | `/api/ideas/random` | `?meal=lunch&exclude=a,b` → random idea from the curated pool                   |
+| GET    | `/api/places`       | `?cuisine=&lat=&lng=` → **501** until `GOOGLE_MAPS_API_KEY` is set              |
 
 The web app falls back to a client-side pick if the API is unreachable, so spinning never breaks.
 
@@ -144,76 +168,32 @@ The web app falls back to a client-side pick if the API is unreachable, so spinn
 
 See `.env.example`. Nothing is required to run today.
 
-| Var                    | Used for                                   |
-| ---------------------- | ------------------------------------------ |
-| `PORT`                 | API/server port (default 4337; Docker uses 8080; hosts may inject their own) |
-| `WEB_PORT`             | Vite dev server port (default 3337)        |
-| `APP_VERSION`          | Reported by `/api/health` (defaults to root `package.json` version) |
-| `WEB_DIST_DIR`         | Where the built SPA lives (auto-detected)  |
-| `GOOGLE_CLIENT_ID/SECRET` | Future Google sign-in                   |
-| `GOOGLE_MAPS_API_KEY`  | Future nearby restaurant search            |
-| `YELP_API_KEY`         | Future ratings/reviews                     |
+| Var                       | Used for                                                                     |
+| ------------------------- | ---------------------------------------------------------------------------- |
+| `PORT`                    | API/server port (default 4337; Docker uses 8080; hosts may inject their own) |
+| `WEB_PORT`                | Vite dev server port (default 3337)                                          |
+| `APP_VERSION`             | Reported by `/api/health` (defaults to root `package.json` version)          |
+| `WEB_DIST_DIR`            | Where the built SPA lives (auto-detected)                                    |
+| `GOOGLE_CLIENT_ID/SECRET` | Future Google sign-in                                                        |
+| `GOOGLE_MAPS_API_KEY`     | Future nearby restaurant search                                              |
+| `YELP_API_KEY`            | Future ratings/reviews                                                       |
 
 Secrets never go in the repo. Locally they live in `.env` (git-ignored); in CI use GitHub
 Actions secrets; on Cursor Apps use the Apps secrets UI.
 
-## CI/CD
+## CI/CD & deployment
 
-### `ci.yml` — every push to `main` and every pull request
-`npm ci` → lint → typecheck → build → boots the production server and curls `/api/health` and
-`/` → `npm audit --audit-level=high`. A second job verifies the Docker image builds.
+The pipeline is **install → lint → build → deploy**. See **[docs/deployment.md](docs/deployment.md)**
+for the full guide, including a diagram, workflow details, Cursor Apps hosting, secrets, rollback
+and troubleshooting.
 
-### `release.yml` — on tags `v*.*.*`
-1. Re-runs CI.
-2. Verifies the tag matches the root `package.json` version.
-3. Builds and pushes `ghcr.io/<owner>/<repo>:<version>` (plus `<major>.<minor>` and `latest`).
-4. Creates a GitHub Release with generated notes and a build tarball attached.
-5. Optionally POSTs `{version, commit, repository}` to `CURSOR_DEPLOY_WEBHOOK_URL` (repo
-   secret) — e.g. a Cursor Automation webhook trigger.
+| Workflow                                     | Runs on                     | Steps                                                                                                          |
+| -------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [`ci.yml`](.github/workflows/ci.yml)         | every PR and push to `main` | `npm ci` → `biome ci` → `npm run build` → upload build artifact                                                |
+| [`deploy.yml`](.github/workflows/deploy.yml) | tags `vX.Y.Z`               | CI, then publish the GHCR image, create a GitHub Release, and (optionally) trigger the Cursor Apps deploy hook |
 
-The job runs in a GitHub **`production` environment**, so you can add required reviewers in
-repo settings to gate releases.
-
-### Cutting a release
-
-```bash
-git checkout main && git pull
-npm version patch      # or minor / major
-```
-
-`preversion` runs `npm run check`, `npm version` bumps `package.json` and creates the
-commit + `vX.Y.Z` tag, and `postversion` pushes with `--follow-tags`, which starts `release.yml`.
-
-### First-time GitHub setup
-
-```bash
-git remote add origin git@github.com:<you>/grub-roulette.git
-git push -u origin main
-```
-
-Then in GitHub settings: create the `production` environment (optional reviewers) and add
-`CURSOR_DEPLOY_WEBHOOK_URL` as a secret if you use it.
-
-## Deploying to Cursor Apps
-
-[Cursor Apps](https://cursor.com/docs/cloud-agent/apps.md) hosting is driven by a Cursor
-**cloud agent**: ask it to _"Deploy this repo as an app"_, review the preview, and click
-**Publish**. Cursor runs security checks (no committed secrets/`.env`, source maps stripped —
-our Vite build already disables them) and gives you a URL. Secrets are added via the
-Apps dashboard, never in files.
-
-What the agent needs to know (this repo is already shaped for it):
-
-- **Node**: `26.13.0` (`.nvmrc`)
-- **Install**: `npm ci`
-- **Build**: `npm run build`
-- **Start**: `npm start` (single process; listens on `$PORT`, serves API + SPA)
-- **Health check**: `GET /api/health`
-
-Cursor's docs currently describe publishing as a step you trigger from the agent, not from a git
-tag. The tag → GitHub Release → (optional) webhook flow above is ready for when you want to
-automate it, and the same Docker image runs on any container host (Cloud Run, Fly, Render, …)
-if you ever need a fallback.
+Release with `npm version patch|minor|major`. It checks, bumps, tags and pushes, and the tag deploys.
+The app is hosted on **Cursor Apps**: a Cursor cloud agent publishes it from this GitHub repo.
 
 ## Adding shadcn components
 
@@ -230,8 +210,8 @@ package (a supply-chain scanner flags it), so after adding a component change it
 
 - Versions are pinned exactly (`.npmrc` → `save-exact=true`, `engine-strict=true`).
 - Packages less than 7 days old are avoided, and new dependencies are run through a security check first.
-- `overrides.minimatch` forces a patched version for ESLint's transitive dependency.
-- Deliberately not used: `clsx`, `globals`, `canvas-confetti`, `tsup`, `next-themes`, `cn`,
+- Biome replaces ESLint + Prettier (about 130 fewer packages, no plugin vulnerabilities).
+- Deliberately not used: `clsx`, `canvas-confetti`, `tsup`, `next-themes`, `cn`,
   and `shadcn` as a dependency (the CLI runs through `npx` only when needed).
 
 ## Roadmap

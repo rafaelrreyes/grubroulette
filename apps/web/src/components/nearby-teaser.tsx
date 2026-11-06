@@ -9,12 +9,14 @@ export function NearbyTeaser() {
   const cuisine = last?.cuisine ?? last?.name ?? "tacos";
 
   return (
-    <Card className="sticker gap-4 overflow-hidden">
+    <Card className="gap-4 overflow-hidden sticker">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg font-black">
           🗺️ Nearby Spots <Badge className="border-2 border-ink bg-grape text-white">Coming soon</Badge>
         </CardTitle>
-        <CardDescription>Soon we'll find the best {cuisine} near you, with Google Maps and Yelp ratings.</CardDescription>
+        <CardDescription>
+          Soon we'll find the best {cuisine} near you, with Google Maps and Yelp ratings.
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <div
@@ -32,7 +34,7 @@ export function NearbyTeaser() {
             ["78%", "22%"],
           ].map(([left, top], i) => (
             <MapPin
-              key={i}
+              key={`${left}-${top}`}
               className="absolute size-7 animate-bounce fill-tomato text-ink"
               style={{ left, top, animationDelay: `${i * 200}ms` }}
             />
@@ -40,7 +42,8 @@ export function NearbyTeaser() {
         </div>
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Star className="size-3.5 fill-mustard text-ink" /> Ratings, distance, and "is it open?" — all coming.
+            <Star className="size-3.5 fill-mustard text-ink" /> Ratings, distance, and "is it open?" — all
+            coming.
           </span>
           <Button size="sm" variant="outline" disabled className="border-2">
             Find nearby

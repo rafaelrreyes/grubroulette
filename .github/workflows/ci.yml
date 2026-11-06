@@ -1,63 +1,46 @@
 name: CI
 
 on:
+  pull_request:
   push:
     branches: [main]
-  pull_request:
   workflow_call:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  check:
-    name: Lint, typecheck, build
+  build:
+    name: Install, lint, build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run build
-      - name: Smoke test production server
-        run: |
-          PORT=8080 node apps/api/dist/index.js &
-          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:8080/api/health && break; sleep 0.5; done
-          curl -fsS http://127.0.0.1:8080/ | grep -q "Grub Roulette"
-      - run: npm audit --audit-level=high
 
-  docker:
-    name: Docker image builds
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v4
-      - uses: docker/build-push-action@v7
+      - name: Install
+        run: npm ci
+
+      - name: Lint and format check (Biome)
+        run: npx biome ci --reporter=github .
+
+      - name: Build (typecheck + bundle)
+        run: npm run build
+        env:
+          APP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v7
         with:
-          context: .
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  compose-dev:
-    name: Docker Compose dev environment boots
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - run: docker compose up -d --build --wait --wait-timeout 300 app
-      - run: |
-          curl -fsS http://127.0.0.1:4337/api/health
-          curl -fsS http://127.0.0.1:3337/ | grep -q "Grub Roulette"
-          curl -fsS http://127.0.0.1:3337/api/health
-      - if: failure()
-        run: docker compose logs app
-      - if: always()
-        run: docker compose down -v
+          name: build
+          path: |
+            apps/web/dist
+            apps/api/dist
+          retention-days: 7

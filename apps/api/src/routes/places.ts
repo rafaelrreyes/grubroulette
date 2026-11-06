@@ -13,10 +13,7 @@ export const places = new Hono().get("/", (c) => {
   if (!parsed.success) return c.json({ error: "cuisine, lat and lng are required" }, 400);
 
   if (!env.GOOGLE_MAPS_API_KEY) {
-    return c.json(
-      { error: "Nearby restaurants are coming soon", enabled: false, query: parsed.data },
-      501,
-    );
+    return c.json({ error: "Nearby restaurants are coming soon", enabled: false, query: parsed.data }, 501);
   }
 
   // TODO: call Google Places API (Text Search / Nearby Search) and merge Yelp ratings.

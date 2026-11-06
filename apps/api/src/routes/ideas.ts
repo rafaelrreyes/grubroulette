@@ -28,7 +28,13 @@ export const ideas = new Hono()
     const { meal, ideas: userIdeas } = parsed.data;
     if (userIdeas.length === 0) {
       const { item } = pickRandom(IDEA_POOL[meal]);
-      return c.json({ winner: item.name, index: -1, idea: item, quip: pickRandom(QUIPS).item, source: "chaos" as const });
+      return c.json({
+        winner: item.name,
+        index: -1,
+        idea: item,
+        quip: pickRandom(QUIPS).item,
+        source: "chaos" as const,
+      });
     }
 
     const { item, index } = pickRandom(userIdeas);

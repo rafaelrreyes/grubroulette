@@ -3,12 +3,12 @@ import { persist } from "zustand/middleware";
 import type { Meal } from "@/data/meals";
 import {
   type Achievement,
-  type GameStats,
-  VETOES_PER_DAY,
-  XP,
   dayKey,
+  type GameStats,
   isYesterday,
   newlyUnlocked,
+  VETOES_PER_DAY,
+  XP,
 } from "@/lib/game";
 
 export interface HistoryEntry {
@@ -139,7 +139,9 @@ export const useGame = create<GameState>()(
             totalAccepts: s.totalAccepts + 1,
             streak: nextStreak,
             lastAcceptDay: today,
-            mealsAccepted: s.mealsAccepted.includes(entry.meal) ? s.mealsAccepted : [...s.mealsAccepted, entry.meal],
+            mealsAccepted: s.mealsAccepted.includes(entry.meal)
+              ? s.mealsAccepted
+              : [...s.mealsAccepted, entry.meal],
             history: [{ ...entry, at: Date.now() }, ...s.history].slice(0, 25),
           }));
           return { xp: XP.accept, unlocked: unlock() };
@@ -152,7 +154,9 @@ export const useGame = create<GameState>()(
       name: "grub-roulette",
       version: 1,
       partialize: (s) =>
-        Object.fromEntries(Object.entries(s).filter(([, v]) => typeof v !== "function")) as Partial<GameState>,
+        Object.fromEntries(
+          Object.entries(s).filter(([, v]) => typeof v !== "function"),
+        ) as Partial<GameState>,
     },
   ),
 );

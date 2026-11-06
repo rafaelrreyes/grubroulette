@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
-import { defineConfig, loadEnv } from "vite";
-import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig, loadEnv } from "vite";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 

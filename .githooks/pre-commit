@@ -1,0 +1,3 @@
+#!/bin/sh
+# Lint + format check on staged files. Fix with: npm run lint:fix
+exec npx --no-install biome check --staged --no-errors-on-unmatched --files-ignore-unknown=true

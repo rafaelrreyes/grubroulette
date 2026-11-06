@@ -1,0 +1,19 @@
+---
+description: Always follow the Grub Roulette project skills for patterns, formatting, and CI/CD
+alwaysApply: true
+---
+
+# Grub Roulette project standards
+
+Before writing or changing code in this repo, read and follow the project skills:
+
+- `.cursor/skills/code-style/SKILL.md`: Biome lint/format rules, TypeScript and naming conventions
+- `.cursor/skills/app-patterns/SKILL.md`: architecture, frontend/backend patterns, dependency policy
+- `.cursor/skills/ci-cd-deploy/SKILL.md`: required when touching workflows, Docker, scripts, releases, or deploys
+
+After every change:
+
+1. `npm run lint:fix` (Biome: format, organize imports, sort Tailwind classes, safe fixes)
+2. `npm run check` (lint + typecheck + build) must pass
+
+If a skill is wrong or out of date, update the skill in the same change, so it stays the source of truth.

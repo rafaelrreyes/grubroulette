@@ -9,7 +9,7 @@ export function Achievements() {
   const count = ACHIEVEMENTS.filter((a) => unlocked[a.id]).length;
 
   return (
-    <Card className="sticker gap-4">
+    <Card className="gap-4 sticker">
       <CardHeader>
         <CardTitle className="text-lg font-black">🏆 Trophy Shelf</CardTitle>
         <CardDescription>
@@ -26,8 +26,11 @@ export function Achievements() {
                   <div
                     className={cn(
                       "flex aspect-square items-center justify-center rounded-xl border-2 text-2xl transition-transform",
-                      got ? "bg-accent shadow-sticker-sm hover:-rotate-6" : "border-dashed opacity-40 grayscale",
+                      got
+                        ? "bg-accent shadow-sticker-sm hover:-rotate-6"
+                        : "border-dashed opacity-40 grayscale",
                     )}
+                    role="img"
                     aria-label={got ? a.name : "Locked achievement"}
                   />
                 }
