@@ -1,0 +1,29 @@
+{
+  "name": "grub-roulette",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A quirky, gamified meal picker. List some ideas, spin the wheel, eat.",
+  "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=26.13.0"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c magenta,cyan \"npm run dev -w @grub/api\" \"npm run dev -w @grub/web\"",
+    "build": "npm run build -w @grub/web && npm run build -w @grub/api",
+    "start": "npm run start -w @grub/api",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "check": "npm run lint && npm run typecheck && npm run build",
+    "preversion": "npm run check",
+    "postversion": "git push --follow-tags"
+  },
+  "devDependencies": {
+    "concurrently": "10.0.6"
+  },
+  "overrides": {
+    "minimatch": "11.0.1"
+  }
+}
